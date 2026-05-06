@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>MeetLog Recorder</title>
+</head>
+<body>
+  <script>
+    let mediaRecorder = null;
+    let micStream = null;
+    let sysStream = null;
+    let audioContext = null;
+    let isSystemAudioAvailable = false;
+
+    async function startRecording() {
+      try {
+        const targetSampleRate = 16000;
+        audioContext = new AudioContext({ sampleRate: targetSampleRate });
+
+        const destination = audioContext.createMediaStreamDestination();
+
+        // Source 1: Microphone (always available)
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate: targetSampleRate,
+            channelCount: 1,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        });
+        const micSource = audioContext.createMediaStreamSource(micStream);
+        micSource.connect(destination);
+
+        // Source 2: System audio via getDisplayMedia (may require user permission)
+        try {
+          sysStream = await navigator.mediaDevices.getDisplayMedia({
+            audio: true,
+            video: {
+              width: 1,
+              height: 1,
+              frameRate: 1,
+            },
+          });
+          // Immediately discard video tracks
+          sysStream.getVideoTracks().forEach((track) => track.stop());
+
+          const sysAudioTrack = sysStream.getAudioTracks()[0];
+          if (sysAudioTrack) {
+            const sysSource = audioContext.createMediaStreamSource(sysStream);
+            sysSource.connect(destination);
+            isSystemAudioAvailable = true;
+            window.electronAPI.sendToMain('system-audio-status', { available: true });
+          }
+        } catch (e) {
+          console.warn('System audio capture unavailable, using microphone only:', e.message);
+          isSystemAudioAvailable = false;
+          window.electronAPI.sendToMain('system-audio-status', { available: false });
+        }
+
+        // Record from mixed stream
+        const mixedStream = destination.stream;
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm';
+
+        mediaRecorder = new MediaRecorder(mixedStream, { mimeType });
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const buffer = reader.result;
+              window.electronAPI.sendToMain('recorder-chunk', buffer);
+            };
+            reader.readAsArrayBuffer(e.data);
+          }
+        };
+
+        // Use shorter chunk intervals (3 seconds) for more responsive transcription
+        mediaRecorder.start(3000);
+        console.log('Recording started with sample rate:', targetSampleRate);
+      } catch (err) {
+        console.error('Failed to start recording:', err);
+        window.electronAPI.sendToMain('recorder-error', err.message || 'Failed to start recording');
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      cleanupStreams();
+    }
+
+    function pauseRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.pause();
+      }
+    }
+
+    function resumeRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'paused') {
+        mediaRecorder.resume();
+      }
+    }
+
+    function cleanupStreams() {
+      if (micStream) {
+        micStream.getTracks().forEach((track) => track.stop());
+        micStream = null;
+      }
+      if (sysStream) {
+        sysStream.getAudioTracks().forEach((track) => track.stop());
+        sysStream = null;
+      }
+      if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close();
+        audioContext = null;
+      }
+      isSystemAudioAvailable = false;
+    }
+
+    window.electronAPI.onMainEvent('recorder-start', startRecording);
+    window.electronAPI.onMainEvent('recorder-stop', stopRecording);
+    window.electronAPI.onMainEvent('recorder-pause', pauseRecording);
+    window.electronAPI.onMainEvent('recorder-resume', resumeRecording);
+  </script>
+</body>
+</html>

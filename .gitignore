@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-electron/
+release/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# FFmpeg (164MB, exceeds GitHub 100MB limit)
+# Download from https://ffmpeg.org/download.html
+tools/ffmpeg.exe
+
+# Models (large files, downloaded by users at runtime)
+*.gguf
+*.bin
+models/
+
+# Package lock (optional)
+package-lock.json
