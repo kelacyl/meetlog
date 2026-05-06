@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # MeetLog Assistant — 本地大模型会议记录助手
 
 基于本地大模型的 Windows 桌面会议记录工具，支持系统音频实时捕获、语音转文字、AI 会议纪要生成，**全程离线运行，数据不上云**。
@@ -96,3 +97,7 @@ MIT License
 ## 作者
 
 MeetLog — kyl2059@qq.com
+=======
+# meetlog
+a local only meeting log application
+>>>>>>> 3095045468de3ae89d7a4d4f90991d9fb71a665a
