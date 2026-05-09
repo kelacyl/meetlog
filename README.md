@@ -100,4 +100,8 @@ MeetLog — kyl2059@qq.com
 =======
 # meetlog
 a local only meeting log application
->>>>>>> 3095045468de3ae89d7a4d4f90991d9fb71a665a
+
+# 赞助
+如果您觉得该项目对您有帮助，欢迎赞助
+<img width="383" height="575" alt="_cgi-bin_mmwebwx-bin_webwxgetmsgimg__ MsgID=1571194012782347709 skey=@crypt_7d7e9bc1_06b7f4614ba6b06b7b2afb554d58ed8b mmweb_appid=wx_webfilehelper" src="https://github.com/user-attachments/assets/7666cca3-35d0-48d0-a9e6-da3d139635f3" />
+
